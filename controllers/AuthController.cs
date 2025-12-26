@@ -1,12 +1,10 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication; // QUEM você é, login/ogout, autenticação  
+using Microsoft.AspNetCore. Authentication.Cookies; // usar cookies para manter usuario logado 
+using Microsoft.AspNetCore.Authorization; // O QUE voce pode fazer, controla acesso e permissões
+using Microsoft.AspNetCore.Mvc; // fornece as ferramentas para  
 using ProjetoCompleto.Services;
 using ProjetoCompleto.ViewModels;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Threading.Tasks;
+using System.Security.Claims; // representa informações sobre o usuário autenticado
 
 namespace ProjetoCompleto.Controllers
 {
@@ -19,101 +17,79 @@ namespace ProjetoCompleto.Controllers
             _authService = authService;
         }
 
-        // GET: Auth/Cadastro
         [HttpGet]
-        [AllowAnonymous]
         public IActionResult Cadastro()
         {
             return View();
         }
 
-        // POST: Auth/Cadastro
         [HttpPost]
-        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cadastro(CadastroViewModel model)
         {
-            if (! ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var sucesso = await _authService.CadastrarUsuarioAsync(model);
+
+            if (! sucesso)
             {
+                ModelState.AddModelError("", "Este email já está cadastrado.");
                 return View(model);
             }
 
-            var resultado = await _authService.CadastrarUsuario(model);
-
-            if (resultado.Sucesso)
-            {
-                TempData["Sucesso"] = resultado.Mensagem;
-                return RedirectToAction(nameof(Login));
-            }
-
-            ModelState.AddModelError(string.Empty, resultado.Mensagem);
-            return View(model);
+            TempData["Mensagem"] = "Cadastro realizado com sucesso!  Faça login. ";
+            return RedirectToAction(nameof(Login));
         }
 
-        // GET: Auth/Login
         [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Login(string returnUrl = null)
+        public IActionResult Login()
         {
-            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
-        // POST: Auth/Login
         [HttpPost]
-        [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
             if (!ModelState.IsValid)
+                return View(model);
+
+            var usuario = await _authService. AutenticarAsync(model. Email, model.Senha);
+
+            if (usuario == null)
             {
+                ModelState.AddModelError("", "Email ou senha inválidos.");
                 return View(model);
             }
 
-            var resultado = await _authService.Login(model);
-
-            if (resultado.Sucesso)
+            var claims = new List<Claim>
             {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, resultado.Usuario.Id.ToString()),
-                    new Claim(ClaimTypes.Name, resultado.Usuario.Nome),
-                    new Claim(ClaimTypes.Email, resultado.Usuario.Email),
-                    new Claim(ClaimTypes.Role, resultado. Usuario.Perfil)
-                };
+                new Claim(ClaimTypes.NameIdentifier, usuario. Id.ToString()),
+                new Claim(ClaimTypes.Name, usuario.Nome),
+                new Claim(ClaimTypes.Email, usuario.Email),
+                new Claim(ClaimTypes.Role, usuario.Perfil)
+            };
 
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = model.LembrarMe,
-                    ExpiresUtc = model.LembrarMe 
-                        ? System.DateTimeOffset.UtcNow.AddDays(30) 
-                        : System.DateTimeOffset.UtcNow.AddHours(2)
-                };
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = model.LembrarMe,
+                ExpiresUtc = model.LembrarMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8)
+            };
 
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    claimsPrincipal,
-                    authProperties);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                claimsPrincipal,
+                authProperties);
 
-                if (! string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                {
-                    return Redirect(returnUrl);
-                }
-
-                return RedirectToAction("Index", "Home");
-            }
-
-            ModelState.AddModelError(string.Empty, resultado. Mensagem);
-            return View(model);
+            return RedirectToAction("Index", "Home");
         }
 
-        // POST: Auth/Logout
         [HttpPost]
+        [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
@@ -121,7 +97,6 @@ namespace ProjetoCompleto.Controllers
             return RedirectToAction(nameof(Login));
         }
 
-        // GET: Auth/AcessoNegado
         [HttpGet]
         public IActionResult AcessoNegado()
         {

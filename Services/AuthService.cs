@@ -1,96 +1,85 @@
-using Microsoft.EntityFrameworkCore;
+using Dapper;
 using ProjetoCompleto.Data;
 using ProjetoCompleto.Models;
 using ProjetoCompleto.ViewModels;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjetoCompleto.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly DbConnectionFactory _dbFactory;
 
-        public AuthService(ApplicationDbContext context)
+        public AuthService(DbConnectionFactory dbFactory)
         {
-            _context = context;
+            _dbFactory = dbFactory;
         }
 
-        public async Task<(bool Sucesso, string Mensagem, Usuario Usuario)> CadastrarUsuario(CadastroViewModel model)
+        public async Task<Usuario?> AutenticarAsync(string email, string senha)
         {
-            try
-            {
-                // Verifica se o email já existe
-                if (await EmailExiste(model.Email))
-                {
-                    return (false, "Este email já está cadastrado", null!);
-                }
+            using var connection = _dbFactory.CreateConnection();
 
-                // Cria o usuário
-                var usuario = new Usuario
-                {
-                    Nome = model.Nome,
-                    Email = model.Email.ToLower(),
-                    SenhaHash = HashSenha(model.Senha),
-                    Telefone = model.Telefone,
-                    DataCadastro = DateTime.Now,
-                    Ativo = true,
-                    Perfil = "Usuario"
-                };
+            var sql = "SELECT ID, NOME, EMAIL, SENHA_HASH AS SenhaHash, TELEFONE, PERFIL, DATA_CADASTRO AS DataCadastro, ATIVO FROM USUARIOS WHERE EMAIL = @Email AND ATIVO = 1";
+            var usuario = await connection.QueryFirstOrDefaultAsync<Usuario>(sql, new { Email = email });
 
-                _context.Usuarios.Add(usuario);
-                await _context.SaveChangesAsync();
+            if (usuario == null)
+                return null;
 
-                return (true, "Cadastro realizado com sucesso!", usuario);
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Erro ao cadastrar usuário: {ex.Message}", null!);
-            }
+            var senhaHash = GerarHashSenha(senha);
+
+            if (usuario.SenhaHash != senhaHash)
+                return null;
+
+            return usuario;
         }
 
-        public async Task<(bool Sucesso, string Mensagem, Usuario Usuario)> Login(LoginViewModel model)
+        public async Task<bool> CadastrarUsuarioAsync(CadastroViewModel model)
         {
-            try
+            using var connection = _dbFactory.CreateConnection();
+
+            // Verificar se email já existe
+            var sqlVerifica = "SELECT COUNT(*) FROM USUARIOS WHERE EMAIL = @Email";
+            var existe = await connection.ExecuteScalarAsync<int>(sqlVerifica, new { Email = model.Email });
+
+            if (existe > 0)
+                return false;
+
+            // Inserir novo usuário
+            var sql = @"INSERT INTO USUARIOS (NOME, EMAIL, SENHA_HASH, TELEFONE, PERFIL, DATA_CADASTRO, ATIVO) 
+                        VALUES (@Nome, @Email, @SenhaHash, @Telefone, @Perfil, @DataCadastro, @Ativo)";
+
+            await connection.ExecuteAsync(sql, new
             {
-                var usuario = await _context.Usuarios
-                    .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+                Nome = model.Nome,
+                Email = model.Email,
+                SenhaHash = GerarHashSenha(model.Senha),
+                Telefone = model.Telefone,
+                Perfil = "Usuario",
+                DataCadastro = DateTime.Now,
+                Ativo = true
+            });
 
-                if (usuario == null)
-                {
-                    return (false, "Email ou senha inválidos", null!);
-                }
-
-                if (!usuario.Ativo)
-                {
-                    return (false, "Usuário inativo", null!);
-                }
-
-                if (!VerificarSenha(model.Senha, usuario.SenhaHash))
-                {
-                    return (false, "Email ou senha inválidos", null!);
-                }
-
-                // Atualiza data do último acesso
-                usuario.DataUltimoAcesso = DateTime.Now;
-                await _context.SaveChangesAsync();
-
-                return (true, "Login realizado com sucesso!", usuario);
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Erro ao fazer login: {ex.Message}", null!);
-            }
+            return true;
         }
 
-        public async Task<bool> EmailExiste(string email)
+        public async Task<Usuario?> ObterUsuarioPorEmailAsync(string email)
         {
-            return await _context.Usuarios
-                .AnyAsync(u => u.Email.ToLower() == email.ToLower());
+            using var connection = _dbFactory.CreateConnection();
+
+            var sql = "SELECT ID, NOME, EMAIL, SENHA_HASH AS SenhaHash, TELEFONE, PERFIL, DATA_CADASTRO AS DataCadastro, ATIVO FROM USUARIOS WHERE EMAIL = @Email";
+            return await connection.QueryFirstOrDefaultAsync<Usuario>(sql, new { Email = email });
         }
 
-        public string HashSenha(string senha)
+        public async Task<Usuario?> ObterUsuarioPorIdAsync(int id)
+        {
+            using var connection = _dbFactory.CreateConnection();
+
+            var sql = "SELECT ID, NOME, EMAIL, SENHA_HASH AS SenhaHash, TELEFONE, PERFIL, DATA_CADASTRO AS DataCadastro, ATIVO FROM USUARIOS WHERE ID = @Id";
+            return await connection.QueryFirstOrDefaultAsync<Usuario>(sql, new { Id = id });
+        }
+
+        private string GerarHashSenha(string senha)
         {
             using (var sha256 = SHA256.Create())
             {
@@ -98,12 +87,6 @@ namespace ProjetoCompleto.Services
                 var hash = sha256.ComputeHash(bytes);
                 return Convert.ToBase64String(hash);
             }
-        }
-
-        public bool VerificarSenha(string senha, string senhaHash)
-        {
-            var hashSenhaInformada = HashSenha(senha);
-            return hashSenhaInformada == senhaHash;
         }
     }
 }

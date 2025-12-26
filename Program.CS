@@ -1,18 +1,15 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ProjetoCompleto.Data;
 using ProjetoCompleto.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// Configurar Entity Framework com Firebird
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseFirebird(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Configurar conexão com banco (Dapper)
+builder.Services.AddSingleton<DbConnectionFactory>();
 
-// Configurar serviços de autenticação
+// Configurar serviços
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Configurar autenticação por cookies
@@ -27,7 +24,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

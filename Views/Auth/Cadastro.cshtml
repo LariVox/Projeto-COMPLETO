@@ -1,4 +1,5 @@
 @model ProjetoCompleto.ViewModels.CadastroViewModel
+
 @{
     ViewData["Title"] = "Cadastro";
 }
@@ -7,54 +8,47 @@
     <div class="col-md-6">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Cadastro de Usuário</h4>
+                <h3 class="mb-0">Cadastro de Usuário</h3>
             </div>
             <div class="card-body">
                 <form asp-action="Cadastro" method="post">
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-                    
-                    <div class="form-group mb-3">
-                        <label asp-for="Nome"></label>
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Nome" class="form-label"></label>
                         <input asp-for="Nome" class="form-control" placeholder="Digite seu nome completo" />
                         <span asp-validation-for="Nome" class="text-danger"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Email"></label>
-                        <input asp-for="Email" class="form-control" placeholder="Digite seu email" />
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" placeholder="seuemail@exemplo.com" />
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Telefone"></label>
+                    <div class="mb-3">
+                        <label asp-for="Telefone" class="form-label"></label>
                         <input asp-for="Telefone" class="form-control" placeholder="(00) 00000-0000" />
                         <span asp-validation-for="Telefone" class="text-danger"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Senha"></label>
+                    <div class="mb-3">
+                        <label asp-for="Senha" class="form-label"></label>
                         <input asp-for="Senha" class="form-control" placeholder="Mínimo 6 caracteres" />
                         <span asp-validation-for="Senha" class="text-danger"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="ConfirmarSenha"></label>
-                        <input asp-for="ConfirmarSenha" class="form-control" placeholder="Confirme sua senha" />
+                    <div class="mb-3">
+                        <label asp-for="ConfirmarSenha" class="form-label"></label>
+                        <input asp-for="ConfirmarSenha" class="form-control" placeholder="Repita a senha" />
                         <span asp-validation-for="ConfirmarSenha" class="text-danger"></span>
                     </div>
 
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-user-plus"></i> Cadastrar
-                        </button>
+                        <button type="submit" class="btn btn-primary">Cadastrar</button>
+                        <a asp-action="Login" class="btn btn-outline-secondary">Já tenho conta</a>
                     </div>
                 </form>
-
-                <hr />
-
-                <div class="text-center">
-                    <p>Já possui uma conta?  <a asp-action="Login">Faça login</a></p>
-                </div>
             </div>
         </div>
     </div>

@@ -1,4 +1,4 @@
-using System. ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProjetoCompleto.ViewModels
 {
@@ -6,28 +6,25 @@ namespace ProjetoCompleto.ViewModels
     {
         [Required(ErrorMessage = "O nome é obrigatório")]
         [StringLength(100, ErrorMessage = "O nome deve ter no máximo 100 caracteres")]
-        [Display(Name = "Nome Completo")]
-        public string Nome { get; set; }
+        public string Nome { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "O email é obrigatório")]
         [EmailAddress(ErrorMessage = "Email inválido")]
-        [Display(Name = "E-mail")]
-        public string Email { get; set; }
+        [StringLength(150, ErrorMessage = "O email deve ter no máximo 150 caracteres")]
+        public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "A senha é obrigatória")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "A senha deve ter entre 6 e 100 caracteres")]
         [DataType(DataType.Password)]
-        [Display(Name = "Senha")]
-        public string Senha { get; set; }
+        public string Senha { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "A confirmação de senha é obrigatória")]
+        [Compare("Senha", ErrorMessage = "As senhas não coincidem")]
         [DataType(DataType.Password)]
-        [Compare("Senha", ErrorMessage = "As senhas não conferem")]
-        [Display(Name = "Confirmar Senha")]
-        public string ConfirmarSenha { get; set; }
+        public string ConfirmarSenha { get; set; } = string.Empty;
 
         [Phone(ErrorMessage = "Telefone inválido")]
-        [Display(Name = "Telefone")]
-        public string Telefone { get; set; }
+        [StringLength(20, ErrorMessage = "O telefone deve ter no máximo 20 caracteres")]
+        public string? Telefone { get; set; }
     }
 }

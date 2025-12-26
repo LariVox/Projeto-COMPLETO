@@ -1,4 +1,5 @@
 @model ProjetoCompleto.ViewModels.LoginViewModel
+
 @{
     ViewData["Title"] = "Login";
 }
@@ -7,50 +8,42 @@
     <div class="col-md-5">
         <div class="card shadow">
             <div class="card-header bg-success text-white">
-                <h4 class="mb-0">Logina</h4>
+                <h3 class="mb-0">Login</h3>
             </div>
             <div class="card-body">
-                @if (TempData["Sucesso"] != null)
+                @if (TempData["Mensagem"] != null)
                 {
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        @TempData["Sucesso"]
+                        @TempData["Mensagem"]
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 }
 
                 <form asp-action="Login" method="post">
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-                    
-                    <div class="form-group mb-3">
-                        <label asp-for="Email"></label>
-                        <input asp-for="Email" class="form-control" placeholder="Digite seu email" autofocus />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" placeholder="seuemail@exemplo. com" autofocus />
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Senha"></label>
+                    <div class="mb-3">
+                        <label asp-for="Senha" class="form-label"></label>
                         <input asp-for="Senha" class="form-control" placeholder="Digite sua senha" />
                         <span asp-validation-for="Senha" class="text-danger"></span>
                     </div>
 
-                    <div class="form-check mb-3">
-                        <input asp-for="LembrarMe" type="checkbox" class="form-check-input" />
+                    <div class="mb-3 form-check">
+                        <input asp-for="LembrarMe" class="form-check-input" />
                         <label asp-for="LembrarMe" class="form-check-label"></label>
                     </div>
 
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-success btn-lg">
-                            <i class="fas fa-sign-in-alt"></i> Entrar
-                        </button>
+                        <button type="submit" class="btn btn-success">Entrar</button>
+                        <a asp-action="Cadastro" class="btn btn-outline-primary">Criar conta</a>
                     </div>
                 </form>
-
-                <hr />
-
-                <div class="text-center">
-                    <p>Não possui uma conta? <a asp-action="Cadastro">Cadastre-se</a></p>
-                    <p><a href="#">Esqueci minha senha</a></p>
-                </div>
             </div>
         </div>
     </div>
